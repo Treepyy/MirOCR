@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_MIRO_CLIENT_ID
 const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI
-const MIRO_AUTH_URL = process.env.NEXT_PUBLIC_MIRO_AUTH_URL
+const MIRO_AUTH_URL = `https://miro.com/oauth/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
 
 export default function MirOCRPage() {
   const [isConnected, setIsConnected] = useState(false);
