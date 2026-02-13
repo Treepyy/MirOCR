@@ -64,7 +64,7 @@ export default function MirOCRPage() {
           {isConnected ? (
             <div className="w-8 h-8 rounded-full bg-gray-200 border border-gray-300 overflow-hidden">
                {/* Placeholder Avatar */}
-               <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">JD</div>
+               <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs"></div>
             </div>
           ) : (
             <a 
@@ -103,8 +103,8 @@ export default function MirOCRPage() {
           <>
             {/* Sidebar Tools */}
             <aside className="w-16 border-r border-gray-200 flex flex-col items-center pt-6 gap-2 bg-white z-40">
-              {['MousePointer2', 'Image', 'MessageSquare', 'Settings'].map((icon, i) => (
-                <button key={i} className={`p-3 rounded-lg hover:bg-gray-100 transition-colors ${i === 1 ? 'bg-blue-50 text-[#4262FF]' : 'text-gray-500'}`}>
+              {['Image'].map((icon, i) => (
+                <button key={i} className={`p-3 rounded-lg hover:bg-gray-100 transition-colors ${i === 0 ? 'bg-blue-50 text-[#4262FF]' : 'text-gray-500'}`}>
                   {/* Using generic SVG placeholders for icons to avoid external deps */}
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
