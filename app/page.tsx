@@ -63,7 +63,8 @@ const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         
         const data = await response.json();
         setDetectedData(data); 
-        simulateScanning(); 
+        // simulateScanning(); 
+        setIsScanning(false);
       } catch (error) {
         console.error("VLM Error:", error);
         setIsScanning(false);
@@ -216,16 +217,24 @@ const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
                     {/* Scanning Overlay */}
                     {isScanning && (
-                      <div className="absolute inset-0 z-10 pointer-events-none">
-                        <div 
-                          className="absolute w-full h-1 bg-[#4262FF] shadow-[0_0_15px_#4262FF] transition-all duration-75 ease-linear"
-                          style={{ top: `${scanProgress}%` }}
-                        />
-                        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-[#050038] text-white px-6 py-2 rounded-full text-sm font-medium">
-                          Analyzing your sketch... {scanProgress}%
+                    <div className="absolute inset-0 z-20 pointer-events-none">
+                      {/* The Bouncing Line */}
+                      <div className="absolute w-full h-1.5 bg-[#4262FF] shadow-[0_0_20px_#4262FF] animate-scan" />
+                      
+                      {/* Subtle Gradient Glow that follows the scan */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#4262FF]/5 to-transparent animate-scan" />
+
+                      {/* Status Indicator */}
+                      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-[#050038] text-white px-8 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-white/10">
+                        <div className="flex gap-1">
+                          <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                          <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                          <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce"></span>
                         </div>
+                        <span className="text-sm font-bold tracking-wider uppercase">Analyzing Sketch...</span>
                       </div>
-                    )}
+                    </div>
+                  )}
                   </div>
 
                   {/* Floating Action Bar */}
