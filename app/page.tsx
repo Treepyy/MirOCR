@@ -1,7 +1,19 @@
 'use client';
+// @ts-nocheck
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+
+interface DetectedNode {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+}
+
+interface DetectedData {
+  nodes: DetectedNode[];
+}
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_MIRO_CLIENT_ID
 const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI
@@ -12,6 +24,8 @@ export default function MirOCRPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [hasImage, setHasImage] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
+  const [detectedData, setDetectedData] = useState<DetectedData | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -21,12 +35,39 @@ export default function MirOCRPage() {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
-  }, []);
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // 1. Create the local preview URL
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
       setHasImage(true);
-      simulateScanning();
+      setIsScanning(true);
+
+      // 2. Prepare for API call
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const data = await response.json();
+        setDetectedData(data); 
+        simulateScanning(); 
+      } catch (error) {
+        console.error("VLM Error:", error);
+        setIsScanning(false);
+      }
     }
   };
 
@@ -145,39 +186,43 @@ export default function MirOCRPage() {
               ) : (
                 // Image Preview & Scanning HUD
                 <div className="relative w-full max-w-4xl h-[600px] bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200">
-                  {/* Image Placeholder (Replace with <img src={previewUrl} /> in prod) */}
-                  <div className="w-full h-full bg-gray-100 flex items-center justify-center relative">
-                    <span className="text-4xl text-gray-300 font-bold select-none">SKETCH_PREVIEW.JPG</span>
-                    
-                    {/* Simulated Bounding Boxes (Only show when NOT scanning) */}
-                    {!isScanning && (
-                      <>
-                        <div className="absolute top-[20%] left-[30%] w-32 h-20 border-2 border-[#4262FF] rounded bg-[#4262FF]/10 shadow-[0_0_0_4px_rgba(66,98,255,0.2)] animate-pulse">
-                          <div className="absolute -top-6 left-0 bg-[#4262FF] text-white text-[10px] px-2 py-0.5 rounded font-mono uppercase tracking-wider flex items-center gap-1">
-                            Database <span className="opacity-75">98%</span>
-                          </div>
-                        </div>
-                        
-                        <div className="absolute top-[50%] left-[60%] w-40 h-24 border-2 border-[#4262FF] rounded bg-[#4262FF]/10 shadow-[0_0_0_4px_rgba(66,98,255,0.2)]">
-                          <div className="absolute -top-6 left-0 bg-[#4262FF] text-white text-[10px] px-2 py-0.5 rounded font-mono uppercase tracking-wider flex items-center gap-1">
-                            Load Balancer <span className="opacity-75">92%</span>
-                          </div>
-                        </div>
-                      </>
+                  {/* --- THE LIVE PREVIEW --- */}
+                  <div className="w-full h-full bg-gray-50 flex items-center justify-center relative">
+                    {previewUrl && (
+                      <img 
+                        src={previewUrl} 
+                        alt="Sketch Preview" 
+                        className="w-full h-full object-contain transition-opacity duration-500" 
+                        style={{ opacity: isScanning ? 0.6 : 1 }}
+                      />
                     )}
+                    {/* Simulated Bounding Boxes (Only show when NOT scanning) */}
+                    {!isScanning && detectedData && detectedData.nodes.map((node: any) => (
+                      <div 
+                        key={node.id}
+                        className="absolute border-2 border-[#4262FF] rounded bg-[#4262FF]/10 shadow-[0_0_0_4px_rgba(66,98,255,0.2)]"
+                        style={{ 
+                          top: `${node.y / 10}%`, // Adjust based on Gemini's 0-1000 scale
+                          left: `${node.x / 10}%`, 
+                          width: '100px', 
+                          height: '60px' 
+                        }}
+                      >
+                        <div className="absolute -top-6 left-0 bg-[#4262FF] text-white text-[10px] px-2 py-0.5 rounded font-mono whitespace-nowrap">
+                          {node.label}
+                        </div>
+                      </div>
+                    ))}
 
                     {/* Scanning Overlay */}
                     {isScanning && (
-                      <div className="absolute inset-0 bg-white/10 backdrop-blur-[1px] z-10">
-                        {/* Scan Line */}
+                      <div className="absolute inset-0 z-10 pointer-events-none">
                         <div 
                           className="absolute w-full h-1 bg-[#4262FF] shadow-[0_0_15px_#4262FF] transition-all duration-75 ease-linear"
                           style={{ top: `${scanProgress}%` }}
                         />
-                        {/* Progress Badge */}
-                        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-[#050038] text-white px-6 py-2 rounded-full text-sm font-medium shadow-xl flex items-center gap-3">
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Analyzing Architecture... {scanProgress}%
+                        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-[#050038] text-white px-6 py-2 rounded-full text-sm font-medium">
+                          Analyzing your sketch... {scanProgress}%
                         </div>
                       </div>
                     )}
@@ -195,7 +240,7 @@ export default function MirOCRPage() {
                         View Code
                       </button>
                       <div className="w-px h-6 bg-gray-200 mx-1" />
-                      <span className="text-xs text-gray-400 font-medium px-1">2 Components Detected</span>
+                      <span className="text-xs text-gray-400 font-medium px-1">{detectedData?.nodes.length || 0} Components Detected</span>
                     </div>
                   )}
                 </div>
