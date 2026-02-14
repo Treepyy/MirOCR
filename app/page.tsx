@@ -247,22 +247,84 @@ export default function MirOCRPage() {
                       />
                     )}
                     {/* Simulated Bounding Boxes (Only show when NOT scanning) */}
-                    {!isScanning && detectedData && detectedData.nodes.map((node: any) => (
-                      <div 
-                        key={node.id}
-                        className="absolute border-2 border-[#4262FF] rounded bg-[#4262FF]/10 shadow-[0_0_0_4px_rgba(66,98,255,0.2)]"
-                        style={{ 
-                          top: `${node.y / 10}%`, // Adjust based on Gemini's 0-1000 scale
-                          left: `${node.x / 10}%`, 
-                          width: '100px', 
-                          height: '60px' 
-                        }}
-                      >
-                        <div className="absolute -top-6 left-0 bg-[#4262FF] text-white text-[10px] px-2 py-0.5 rounded font-mono whitespace-nowrap">
-                          {node.label}
-                        </div>
+                    {/* 1. DATA OVERLAY LAYER */}
+                    {!isScanning && detectedData && (
+                      <div className="absolute inset-0 pointer-events-none z-30">
+                        
+                        {/* 2. SVG LAYER (Connectors with Arrowheads) */}
+                        <svg 
+                          className="absolute inset-0 w-full h-full" 
+                          viewBox="0 0 100 100" 
+                          preserveAspectRatio="none"
+                        >
+                          <defs>
+                            {/* Define the Arrowhead Marker */}
+                            <marker
+                              id="arrowhead"
+                              markerWidth="10"
+                              markerHeight="7"
+                              refX="9" // Position of the arrowhead relative to the end of the line
+                              refY="3.5"
+                              orient="auto"
+                            >
+                              <polygon points="0 0, 10 3.5, 0 7" fill="#000000" />
+                            </marker>
+                          </defs>
+
+                          {detectedData.edges?.map((edge: any, index: number) => {
+                            const fromNode = detectedData.nodes.find((n: any) => n.id === edge.from);
+                            const toNode = detectedData.nodes.find((n: any) => n.id === edge.to);
+
+                            if (!fromNode || !toNode) return null;
+
+                            return (
+                              <line
+                                key={`edge-${index}`}
+                                x1={fromNode.x / 10}
+                                y1={fromNode.y / 10}
+                                x2={toNode.x / 10}
+                                y2={toNode.y / 10}
+                                stroke="#000000"
+                                strokeWidth="0.4"
+                                markerEnd="url(#arrowhead)" // This applies the arrowhead!
+                                strokeDasharray="1 1"
+                                className="opacity-50"
+                              />
+                            );
+                          })}
+                        </svg>
+
+                        {/* 3. HTML LAYER (Node Labels) */}
+                        {detectedData.nodes?.map((node: any) => (
+                          <div 
+                            key={node.id}
+                            className="absolute border-2 border-[#4262FF] rounded bg-[#4262FF]/10 shadow-[0_0_0_4px_rgba(66,98,255,0.2)]"
+                            style={{ 
+                              top: `${node.y / 10}%`, 
+                              left: `${node.x / 10}%`, 
+                              width: '100px', 
+                              height: '60px',
+                              transform: 'translate(-50%, -50%)' // Forces the center of the box onto the coordinate
+                            }}
+                          >
+                            {/* Component Label Tag */}
+                            <div className="absolute -top-7 left-0 bg-[#4262FF] text-white text-[9px] px-2 py-0.5 rounded font-mono whitespace-nowrap flex items-center gap-1">
+                              <span className="font-bold uppercase">{node.miroShape}</span>
+                              <span className="opacity-40">|</span>
+                              <span>{node.label}</span>
+                            </div>
+
+                            <span className="text-[10px] font-bold text-[#050038] truncate px-2">
+                              
+                            </span>
+
+                            {/* HUD Corners */}
+                            <div className="absolute -top-1 -left-1 w-2 h-2 border-t-2 border-l-2 border-[#4262FF]"></div>
+                            <div className="absolute -bottom-1 -right-1 w-2 h-2 border-b-2 border-r-2 border-[#4262FF]"></div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
 
                     {/* Scanning Overlay */}
                     {isScanning && (
