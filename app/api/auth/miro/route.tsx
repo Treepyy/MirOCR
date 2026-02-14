@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
         client_id: process.env.NEXT_PUBLIC_MIRO_CLIENT_ID!,
         client_secret: process.env.MIRO_CLIENT_SECRET!, 
         code: code,
-        redirect_uri: 'http://localhost:3000/callback',
+        redirect_uri: process.env.NEXT_PUBLIC_MIRO_REDIRECT_URI!,
       }),
     });
 
