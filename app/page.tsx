@@ -7,12 +7,20 @@ import Link from 'next/link';
 interface DetectedNode {
   id: string;
   label: string;
+  type: string;
+  tip: string;
   x: number;
   y: number;
 }
 
+interface DetectedEdge {
+  from: string;
+  to: string;
+}
+
 interface DetectedData {
   nodes: DetectedNode[];
+  edges: DetectedEdge[];
 }
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_MIRO_CLIENT_ID
@@ -26,20 +34,39 @@ export default function MirOCRPage() {
   const [scanProgress, setScanProgress] = useState(0);
   const [detectedData, setDetectedData] = useState<DetectedData | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [newBoardUrl, setNewBoardUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('code')) {
-        setIsConnected(true);
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    }
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
 
+    if (code && !accessToken) {
+      const exchangeToken = async () => {
+        try {
+          const res = await fetch('/api/auth/miro', {
+            method: 'POST',
+            body: JSON.stringify({ code }),
+          });
+          const data = await res.json();
+          
+          if (data.access_token) {
+            setAccessToken(data.access_token);
+            setIsConnected(true);
+            
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } catch (err) {
+          console.error("Token exchange failed", err);
+        }
+      };
+      exchangeToken();
+    }
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
-  }, [previewUrl]);
+  }, [previewUrl, accessToken]);
 
 const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -69,6 +96,34 @@ const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         console.error("VLM Error:", error);
         setIsScanning(false);
       }
+    }
+  };
+
+  const handleSyncToMiro = async () => {
+    if (!detectedData) {
+      console.error("No detected data available");
+      return;
+    }
+    setIsSyncing(true);
+    try {
+      const response = await fetch('/api/miro-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nodes: detectedData.nodes,
+          edges: detectedData.edges,
+          accessToken: accessToken,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setNewBoardUrl(data.boardUrl);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -238,20 +293,43 @@ const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   </div>
 
                   {/* Floating Action Bar */}
-                  {!isScanning && (
-                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-xl shadow-xl border border-gray-200 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      <button className="bg-[#4262FF] hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                        Sync to Board
-                      </button>
-                      <button className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-                        View Code
+                  {hasImage && !isScanning && (
+                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-xl shadow-xl border border-gray-200 flex items-center gap-3">
+                    {newBoardUrl ? (
+                      <a 
+                        href={newBoardUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="bg-[#4262FF] text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2"
+                      >
+                        <span>Open New Miro Board</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                      </a>
+                    ) : (
+                      <>
+                      <button 
+                        onClick={handleSyncToMiro}
+                        disabled={isSyncing}
+                        className="bg-[#4262FF] hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50"
+                      >
+                        {isSyncing ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span>Generating Board...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                            <span>Sync to New Board</span>
+                          </>
+                        )}
                       </button>
                       <div className="w-px h-6 bg-gray-200 mx-1" />
                       <span className="text-xs text-gray-400 font-medium px-1">{detectedData?.nodes.length || 0} Components Detected</span>
-                    </div>
-                  )}
+                      </>
+                    )}
+                  </div>
+                )}
                 </div>
               )}
             </main>

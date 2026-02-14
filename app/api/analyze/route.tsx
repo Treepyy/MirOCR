@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     ]);
 
     const response = await result.response;
-    console.log('Gemini Raw Response:', response);
+    console.log('Gemini Raw Response:', response.text());
     const text = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
     
     return NextResponse.json(JSON.parse(text));
