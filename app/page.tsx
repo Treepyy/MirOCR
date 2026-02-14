@@ -68,7 +68,7 @@ export default function MirOCRPage() {
     };
   }, [previewUrl, accessToken]);
 
-const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       
@@ -127,19 +127,12 @@ const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     }
   };
 
-  const simulateScanning = () => {
-    setIsScanning(true);
-    setScanProgress(0);
-    const interval = setInterval(() => {
-      setScanProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsScanning(false);
-          return 100;
-        }
-        return prev + 2; // Speed of scan
-      });
-    }, 50);
+  const handleReset = () => {
+    setHasImage(false);
+    setDetectedData(null);
+    setNewBoardUrl(null);
+    setPreviewUrl(null); // Clear the object URL to keep memory clean
+    setIsScanning(false);
   };
 
   return (
@@ -296,15 +289,25 @@ const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   {hasImage && !isScanning && (
                   <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-xl shadow-xl border border-gray-200 flex items-center gap-3">
                     {newBoardUrl ? (
+                      <>
                       <a 
                         href={newBoardUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="bg-[#4262FF] text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2"
                       >
-                        <span>Open New Miro Board</span>
+                        <span>Open Miro Board</span>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                       </a>
+                      <div className="w-px h-6 bg-gray-200 mx-1" />
+                      <button 
+                        onClick={handleReset}
+                        className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        Scan Another
+                      </button>
+                      </>
                     ) : (
                       <>
                       <button 
@@ -315,14 +318,21 @@ const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                         {isSyncing ? (
                           <>
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            <span>Generating Board...</span>
+                            <span>Generating...</span>
                           </>
                         ) : (
                           <>
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                            <span>Sync to New Board</span>
+                            <span>Create!</span>
                           </>
                         )}
+                      </button>
+                      <button 
+                        onClick={handleReset}
+                        disabled={isSyncing}
+                        className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50"
+                      >
+                        Cancel
                       </button>
                       <div className="w-px h-6 bg-gray-200 mx-1" />
                       <span className="text-xs text-gray-400 font-medium px-1">{detectedData?.nodes.length || 0} Components Detected</span>
