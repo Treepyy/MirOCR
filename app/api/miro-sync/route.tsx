@@ -3,6 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const { nodes, edges, accessToken } = await req.json();
+    const colorMap: Record<string, string> = {
+        cylinder: '#bee9fd', 
+        cloud: '#dce0f7',    
+        monitor: '#ecb0f6', 
+        rhombus: '#b8f4bd', 
+    };
 
     if (!accessToken) {
       return NextResponse.json({ error: 'Missing Auth Token' }, { status: 400 });
@@ -37,21 +43,28 @@ export async function POST(req: NextRequest) {
       const shapeRes = await fetch(`https://api.miro.com/v2/boards/${boardId}/shapes`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          data: {
-            content: node.label,
-            shape: node.type === 'database' ? 'cylinder' : 'rectangle', // tbi
-          },
-          position: {
-            x: (node.x * 10) - 500,
-            y: (node.y * 10) - 500,
-          },
+            data: {
+                content: `<strong>${node.label}</strong>`,
+                shape: node.shape || 'rectangle', 
+            },
+            style: {
+                fillColor: colorMap[node.shape] || '#ffffff', 
+                borderColor: '#050038',
+                borderWidth: '2.0',
+                textAlign: 'center',
+            },
+            position: {
+                x: (node.x * 3) - 500,
+                y: (node.y * 3) - 500,
+            },
         }),
       });
       const miroShape = await shapeRes.json();
+      console.log('Created shape:', miroShape, miroShape.context);
       nodeMapping[node.id] = miroShape.id;
 
       // 3. TIPS!
@@ -65,8 +78,8 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             data: { content: node.tip },
             position: {
-              x: (node.x * 10) - 350, // Offset it to the right of the shape
-              y: (node.y * 10) - 550,
+              x: (node.x * 3) - 350, 
+              y: (node.y * 3) - 550,
             },
           }),
         });
@@ -84,6 +97,11 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           startItem: { id: nodeMapping[edge.from] },
           endItem: { id: nodeMapping[edge.to] },
+          shape: 'curved', 
+         style: {
+            strokeColor: '#050038',
+            strokeWidth: '2.0',
+        }
         }),
       });
     }

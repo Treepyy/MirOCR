@@ -8,6 +8,7 @@ interface DetectedNode {
   id: string;
   label: string;
   type: string;
+  shape: string;
   tip: string;
   x: number;
   y: number;

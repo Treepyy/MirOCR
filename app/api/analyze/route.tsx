@@ -18,19 +18,34 @@ export async function POST(req: NextRequest) {
 
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    const prompt = `
-      Analyze this handwritten system architecture diagram. 
-      1. Identify all components (e.g., Database, Client, Server, Load Balancer).
-      2. For each, provide coordinates (0-1000 scale) and a label.
-      3. Identify connections between components.
-      4. Provide one 'Best Practice' tip for each.
+    const MIRO_SHAPES = [
+        "rectangle", "round_rectangle", "circle", "triangle", "rhombus", 
+        "parallelogram", "trapezoid", "pentagon", "hexagon", "octagon", 
+        "wedge_round_rectangle_callout", "star", "flow_chart_predefined_process", 
+        "cloud", "cross", "can", "right_arrow", "left_arrow", 
+        "left_right_arrow", "left_brace", "right_brace"
+    ];
 
-      Return ONLY a JSON object:
-      {
-        "nodes": [{"id": "1", "label": "Database", "type": "postgres", "x": 20, "y": 30, "tip": "Enable SSL"}],
-        "edges": [{"from": "1", "to": "2"}]
-      }
-    `;
+    const prompt = `
+        Analyze this handwritten system architecture diagram. 
+        1. Identify all components (e.g., Database, Client, Server, Load Balancer).
+        2. For each, provide coordinates (0-1000 scale) and a label.
+        3. Identify connections between components.
+        4. Provide one 'Best Practice' tip for each.
+        Additionally, for the "shape" value in the JSON, map each component to the most visually and functionally accurate Miro shape from this list: 
+            [${MIRO_SHAPES.join(', ')}].
+            - Use 'can' for databases.
+            - Use 'cloud' for external services/internet.
+            - Use 'monitor' for frontend/client apps.
+            - Use 'rhombus' for decision nodes or routers.
+
+        Return ONLY a JSON object:
+        {
+            "nodes": [{"id": "1", "label": "Auth Service", "shape": "round_rectangle", "x": 20, "y": 30, "tip": "Use JWT"}],
+            "edges": [{"from": "1", "to": "2"}]
+        }
+
+        `;
 
     const result = await model.generateContent([
       prompt,
