@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
 
     // 2. CREATE SHAPES
     const nodeMapping: Record<string, string> = {};
+    const boardDistanceMultiplier = 2;
 
     for (const node of nodes) {
       const shapeRes = await fetch(`https://api.miro.com/v2/boards/${boardId}/shapes`, {
@@ -58,8 +59,8 @@ export async function POST(req: NextRequest) {
                 textAlign: 'center',
             },
             position: {
-                x: (node.x * 3) - 500,
-                y: (node.y * 3) - 500,
+                x: (node.x * boardDistanceMultiplier) - 500,
+                y: (node.y * boardDistanceMultiplier) - 500,
             },
         }),
       });
@@ -78,8 +79,8 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             data: { content: node.tip },
             position: {
-              x: (node.x * 3) - 350, 
-              y: (node.y * 3) - 550,
+              x: (node.x * boardDistanceMultiplier) - 350, 
+              y: (node.y * boardDistanceMultiplier) - 550,
             },
           }),
         });
