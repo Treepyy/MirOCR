@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     // 4. CREATE CONNECTORS
     for (const edge of edges) {
-      await fetch(`https://api.miro.com/v2/boards/${boardId}/connectors`, {
+      const edgeRes = await fetch(`https://api.miro.com/v2/boards/${boardId}/connectors`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -99,12 +99,19 @@ export async function POST(req: NextRequest) {
           startItem: { id: nodeMapping[edge.from] },
           endItem: { id: nodeMapping[edge.to] },
           shape: 'curved', 
-         style: {
+          captions: edge.comment ? [{
+            content: edge.comment,
+
+          }] : [],
+          style: {
             strokeColor: '#050038',
             strokeWidth: '2.0',
-        }
+          }
         }),
       });
+      // const miroConnector = await edgeRes.json();
+      // console.log('Created connector:', miroConnector);
+      // console.log(miroConnector.context);
     }
 
     return NextResponse.json({ success: true, boardUrl: newBoard.viewLink });

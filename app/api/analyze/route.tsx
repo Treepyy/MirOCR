@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
         Analyze this handwritten system architecture diagram. 
         1. Identify all components (e.g., Database, Client, Server, Load Balancer).
         2. For each, provide coordinates (0-1000 scale) and a label.
-        3. Identify connections between components.
+        3. Identify connections between components, and the comments written within those connections if applicable.
         4. Provide one 'Best Practice' tip for each.
         Additionally, for the "shape" value in the JSON, map each component to the most visually and functionally accurate Miro shape from this list: 
             [${MIRO_SHAPES.join(', ')}].
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         Return ONLY a JSON object:
         {
             "nodes": [{"id": "1", "label": "Auth Service", "shape": "round_rectangle", "x": 20, "y": 30, "tip": "Use JWT"}],
-            "edges": [{"from": "1", "to": "2"}]
+            "edges": [{"from": "1", "to": "2", "comment": "JWT"}]
         }
 
         `;

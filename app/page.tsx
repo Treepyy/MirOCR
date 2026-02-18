@@ -17,6 +17,7 @@ interface DetectedNode {
 interface DetectedEdge {
   from: string;
   to: string;
+  comment: string;
 }
 
 interface DetectedData {
