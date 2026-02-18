@@ -40,6 +40,8 @@ export default function MirOCRPage() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [newBoardUrl, setNewBoardUrl] = useState<string | null>(null);
   const [includeTips, setIncludeTips] = useState(true);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -124,8 +126,14 @@ export default function MirOCRPage() {
       if (data.success) {
         setNewBoardUrl(data.boardUrl);
       }
+      else{
+        setErrorMessage("Failed to create board! Error details: " + (data.error || "Unknown error"));
+        setIsErrorModalOpen(true);
+      }
     } catch (err) {
       console.error(err);
+      setErrorMessage("A network error occurred. Please try again.");
+      setIsErrorModalOpen(true);
     } finally {
       setIsSyncing(false);
     }
@@ -449,6 +457,39 @@ export default function MirOCRPage() {
           </>
         )}
       </div>
+      <ErrorModal 
+        isOpen={isErrorModalOpen} 
+        onClose={() => setIsErrorModalOpen(false)} 
+        message={errorMessage} 
+      />
     </div>
   );
 }
+
+const ErrorModal = ({ isOpen, onClose, message }: { isOpen: boolean, onClose: () => void, message: string }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050038]/40 backdrop-blur-sm px-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 border border-red-100 animate-in fade-in zoom-in duration-200">
+        <div className="flex flex-col items-center text-center">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-[#050038] mb-2">Sync Failed</h3>
+          <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+            {message || "We couldn't create your Miro board. Please check your connection and try again."}
+          </p>
+          <button 
+            onClick={onClose}
+            className="w-full bg-[#050038] hover:bg-[#050038]/90 text-white font-bold py-3 rounded-xl transition-all active:scale-95"
+          >
+            Got it!
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

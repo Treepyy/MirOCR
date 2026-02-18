@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const newBoard = await boardResponse.json();
     const boardId = newBoard.id;
 
-    if (!boardId) throw new Error('Failed to create board');
+    if (!boardId) throw new Error('Failed to create board, please check if you have space for a new Miro board.');
 
     // 2. CREATE SHAPES
     const nodeMapping: Record<string, string> = {};
@@ -118,6 +118,7 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Miro Sync Error:', error);
-    return NextResponse.json({ error: 'Failed to sync' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
