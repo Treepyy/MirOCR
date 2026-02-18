@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { nodes, edges, accessToken } = await req.json();
+    const { nodes, edges, accessToken, includeTips } = await req.json();
     const colorMap: Record<string, string> = {
         cylinder: '#bee9fd', 
         cloud: '#dce0f7',    
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       nodeMapping[node.id] = miroShape.id;
 
       // 3. TIPS!
-      if (node.tip) {
+      if (includeTips && node.tip) {
         await fetch(`https://api.miro.com/v2/boards/${boardId}/sticky_notes`, {
           method: 'POST',
           headers: {

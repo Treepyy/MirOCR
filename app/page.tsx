@@ -39,6 +39,7 @@ export default function MirOCRPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [newBoardUrl, setNewBoardUrl] = useState<string | null>(null);
+  const [includeTips, setIncludeTips] = useState(true);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -115,6 +116,7 @@ export default function MirOCRPage() {
           nodes: detectedData.nodes,
           edges: detectedData.edges,
           accessToken: accessToken,
+          includeTips: includeTips,
         }),
       });
 
@@ -207,32 +209,68 @@ export default function MirOCRPage() {
 
             {/* Main Canvas Area */}
             <main className="flex-1 bg-[#F9F9F9] relative flex items-center justify-center p-8">
-              
               {!hasImage ? (
                 // Upload Zone
-                <div className="w-full max-w-2xl">
-                  <input 
-                    type="file" 
-                    id="file-upload" 
-                    className="hidden" 
-                    onChange={handleUpload} 
-                    accept="image/*"
-                  />
-                  <label 
-                    htmlFor="file-upload" 
-                    className="flex flex-col items-center gap-4 p-12 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-[#4262FF] transition-all group bg-white"
-                  >
-                    <div className="w-16 h-16 bg-blue-50 text-[#4262FF] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                <div className="flex flex-col items-center gap-6 w-full max-w-2xl">
+                  <div className="w-full max-w-2xl">
+                    <input 
+                      type="file" 
+                      id="file-upload" 
+                      className="hidden" 
+                      onChange={handleUpload} 
+                      accept="image/*"
+                    />
+                    <label 
+                      htmlFor="file-upload" 
+                      className="flex flex-col items-center gap-4 p-12 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-[#4262FF] transition-all group bg-white"
+                    >
+                      <div className="w-16 h-16 bg-blue-50 text-[#4262FF] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                      </div>
+                      <div className="text-center">
+                        <h3 className="text-xl font-bold text-gray-900">Upload System Sketch</h3>
+                        <p className="text-gray-500 mt-1">Supports JPG, PNG from standard notebooks</p>
+                      </div>
+                      <span className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 shadow-sm group-hover:shadow-md transition-shadow">
+                        Browse Files
+                      </span>
+                    </label>
+                  </div>
+                  {/* Option to include architecture tips */}
+                  <div className="flex items-center gap-3 p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm transition-all hover:bg-white hover:border-[#4262FF] group relative">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={includeTips}
+                        onChange={() => setIncludeTips(!includeTips)}
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4262FF]"></div>
+                      <span className="ml-3 text-sm font-semibold text-[#050038] group-hover:text-[#4262FF] transition-colors">
+                        Generate Architecture Tips
+                      </span>
+                    </label>
+
+                    {/* Info Icon & Tooltip Container */}
+                    <div className="relative flex items-center group/tooltip">
+                      <svg 
+                        className="w-4 h-4 text-gray-400 hover:text-[#4262FF] cursor-help transition-colors" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+
+                      {/* The Tooltip Card */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-48 p-2 bg-[#050038] text-white text-[11px] rounded-lg opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-opacity duration-200 shadow-xl z-50">
+                        <div className="relative">
+                          Allow Gemini 2.5 Flash to also provide security and performance recommendations as sticky notes based on your stack.
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#050038]"></div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <h3 className="text-xl font-bold text-gray-900">Upload System Sketch</h3>
-                      <p className="text-gray-500 mt-1">Supports JPG, PNG from standard notebooks</p>
-                    </div>
-                    <span className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 shadow-sm group-hover:shadow-md transition-shadow">
-                      Browse Files
-                    </span>
-                  </label>
+                  </div>
                 </div>
               ) : (
                 // Image Preview & Scanning HUD
@@ -405,6 +443,7 @@ export default function MirOCRPage() {
                   </div>
                 )}
                 </div>
+                
               )}
             </main>
           </>
